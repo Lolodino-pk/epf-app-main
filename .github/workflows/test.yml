@@ -1,0 +1,55 @@
+name: "TP2 CI/CD"
+
+on: 
+  push:
+    branches:
+      - main
+    paths-ignore: 
+      - '*.md'
+  pull_request:
+    paths-ignore: 
+      - '*.md'
+  workflow_dispatch:
+
+concurrency: 
+          group: "${{ github.workflow }}-${{ github.ref }}"
+          cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with: 
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci 
+      - run: npm run lint
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy: 
+      matrix: 
+        node: [20,22]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with: 
+          node-version: ${{ matrix.node }}
+          cache: 'npm'
+      - run: npm ci 
+      - run: npm test
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [lint,test]
+    steps:
+      - uses: actions/checkout@v7
+      - run: npm ci 
+      - run: npm run build
+      - run: du -sh dist >> $GITHUB_STEP_SUMMARY
+      - run: du -sh dist >> $GITHUB_STEP_SUMMARY
+
+
